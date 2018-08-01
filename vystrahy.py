@@ -11,6 +11,7 @@ mqttPassword = 'xxx'
 import urllib.request
 import xml.etree.ElementTree as et
 from datetime import datetime
+import re
 import paho.mqtt.client as mqtt
 import paho.mqtt.publish as publish
 
@@ -18,14 +19,6 @@ rawData = urllib.request.urlopen(URL).read().decode('utf-8')
 root = et.fromstring(rawData)
 warnings = []
 for country in root.findall("./country[@code='CZ']"):
-	for paragraph in country.findall("./text/paragraph[@type='title']"):
-		fromDt = datetime.strptime(country.attrib['start-time'], '%Y-%m-%dT%H:%M:%S')
-		toDt = datetime.strptime(country.attrib['end-time'], '%Y-%m-%dT%H:%M:%S')
-		if not (fromDt <= datetime.now() <= toDt):
-			continue
-		warnings.append('{} ({}. st, {} - {})'.format(
-			paragraph.text, country.attrib['awareness-level-code'],
-			fromDt.strftime('%d.%m. %H:%M'), toDt.strftime('%d.%m. %H:%M')))
 	for situation in country.findall("./region[@code='{}']/situation".format(REGION)):
 		if ('subregion-types' in situation.attrib and
 				situation.attrib['subregion-types'] == 'districts' and
@@ -33,15 +26,15 @@ for country in root.findall("./country[@code='CZ']"):
 			continue
 		fromDt = datetime.strptime(situation.attrib['start-time'], '%Y-%m-%dT%H:%M:%S')
 		toDt = datetime.strptime(situation.attrib['end-time'], '%Y-%m-%dT%H:%M:%S')
-		if not (fromDt <= datetime.now() <= toDt):
-			continue
 		warnings.append('{} ({}.st, {} - {})'.format(
 			situation.attrib['awareness-type'],
 			situation.attrib['awareness-level-code'],
 			fromDt.strftime('%d.%m. %H:%M'), toDt.strftime('%d.%m. %H:%M')))
 
+text = None
 if len(warnings):
 	text = ' + '.join(warnings)
-	publish.single('pocasi/vystraha', text, retain=True,
-		hostname=mqttServer, protocol=mqtt.MQTTv311,
-		auth={'username':mqttUser,'password':mqttPassword})
+
+publish.single('pocasi/vystraha', text, retain=True,
+	hostname=mqttServer, protocol=mqtt.MQTTv311,
+	auth={'username':mqttUser,'password':mqttPassword})

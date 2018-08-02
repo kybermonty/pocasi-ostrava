@@ -25,11 +25,14 @@ for country in root.findall("./country[@code='CZ']"):
 	            DISTRICT not in situation.attrib['districts'].split(',')):
 			continue
 		fromDt = datetime.strptime(situation.attrib['start-time'], '%Y-%m-%dT%H:%M:%S')
-		toDt = datetime.strptime(situation.attrib['end-time'], '%Y-%m-%dT%H:%M:%S')
+		toText = '?'
+		if situation.attrib['end-time'] != '9999-11-11T23:30:00':
+			toDt = datetime.strptime(situation.attrib['end-time'], '%Y-%m-%dT%H:%M:%S')
+			toText = toDt.strftime('%d.%m. %H:%M')
 		warnings.append('{} ({}.st, {} - {})'.format(
 			situation.attrib['awareness-type'],
 			situation.attrib['awareness-level-code'],
-			fromDt.strftime('%d.%m. %H:%M'), toDt.strftime('%d.%m. %H:%M')))
+			fromDt.strftime('%d.%m. %H:%M'), toText))
 
 text = None
 if len(warnings):

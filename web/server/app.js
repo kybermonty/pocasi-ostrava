@@ -22,6 +22,7 @@ const getData = () => {
 	return Promise.props({
 		state: redisClient.getAsync('pocasi/stav'),
 		temperature: redisClient.getAsync('pocasi/teplota'),
+		feelslike: redisClient.getAsync('pocasi/teplota-pocitova'),
 		wind: redisClient.getAsync('pocasi/vitr'),
 		humidity: redisClient.getAsync('pocasi/vlhkost'),
 		pressure: redisClient.getAsync('pocasi/tlak'),

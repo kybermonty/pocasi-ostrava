@@ -20,7 +20,7 @@ data = urllib.request.urlopen(URL).read().decode('cp1250')
 soup = BeautifulSoup(data, 'html.parser')
 rows = soup.find_all('tr', class_='met_sa1')
 code = [x.string.strip() for x in rows if AIRPORT in x.string][0]
-code = code[code.find('LKMT'):]
+code = code[code.find(AIRPORT):]
 
 obs = Metar.Metar(code)
 
@@ -35,6 +35,7 @@ if obs.dewpt:
 
 if obs.wind_speed:
   wind = round(obs.wind_speed.value('KMH'), 1)
+  v = obs.wind_speed.value('MPS')
   publish.single('pocasi/vitr', wind, retain=True,
     hostname=mqttServer, protocol=mqtt.MQTTv311,
     auth={'username':mqttUser,'password':mqttPassword})
@@ -53,6 +54,13 @@ if t and td:
     hostname=mqttServer, protocol=mqtt.MQTTv311,
     auth={'username':mqttUser,'password':mqttPassword})
 
+if t and rh and v:
+  e = (rh / 100) * 6.105 * math.exp((17.27 * t) / (237.7 + t))
+  at = t + 0.33 * e - 0.7 * v - 4
+  publish.single('pocasi/teplota-pocitova', '{:.2f}'.format(at), retain=True,
+    hostname=mqttServer, protocol=mqtt.MQTTv311,
+    auth={'username':mqttUser,'password':mqttPassword})
+
 
 info = None
 
@@ -66,6 +74,7 @@ weather_dict = OrderedDict([
   ('drizzle and rain', 'slabé d. přeh.'),
   ('rain showers', 'dešťové přeháňky'),
   ('light rain', 'slabý déšť'),
+  ('light freezing drizzle', 'mrznoucí mrholení'),
   ('light drizzle', 'slabé mrholení'),
   ('light snow', 'mírné sněžení'),
   ('low drifting snow', 'vanoucí sníh'),

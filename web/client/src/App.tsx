@@ -5,13 +5,15 @@ import Sockette from 'sockette';
 import { TableDoubleRow } from "./components/Table/doubleRow";
 import { TableRow } from "./components/Table/row";
 import {
-  FORECAST_TODAY_ICON, FORECAST_TOMORROW_ICON, HUMIDITY_ICON, PRESSURE_ICON, QUALITY_ICON,
-  STATE_ICON, SUNRISE_ICON, SUNSET_ICON, TEMPERATURE_ICON, UPDATED_ICON, WARNING_ICON, WIND_ICON
+  FEELSLIKE_ICON, FORECAST_TODAY_ICON, FORECAST_TOMORROW_ICON, HUMIDITY_ICON, PRESSURE_ICON,
+  QUALITY_ICON, STATE_ICON, SUNRISE_ICON, SUNSET_ICON, TEMPERATURE_ICON, UPDATED_ICON,
+  WARNING_ICON, WIND_ICON
 } from "./constants";
 
 interface IWeather {
   state: string;
   temperature: string;
+  feelslike: string;
   wind: string;
   humidity: string;
   pressure: string;
@@ -65,6 +67,11 @@ class App extends React.Component<any, IState> {
             title="Teplota"
             icon={TEMPERATURE_ICON}
             value={this.state.weather.temperature + ' °C'}
+          />
+          <TableRow
+            title="Pocitová teplota"
+            icon={FEELSLIKE_ICON}
+            value={this.state.weather.feelslike + ' °C'}
           />
           <TableRow
             title="Rychlost větru"

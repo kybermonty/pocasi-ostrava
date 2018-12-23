@@ -1,11 +1,9 @@
 {
     "env": {
-        "browser": true,
         "node": true
     },
     "extends": "standard",
     "globals": {
-        "angular": true,
 	    "_": true
     },
     "rules": {
@@ -34,7 +32,6 @@
             "exports": "never",
             "functions": "never"
         }],
-        "no-console": "warn",
         "max-len": [1, 100],
         "arrow-parens": "error",
         "new-cap": "off",

@@ -1,13 +1,27 @@
-const Promise = require('bluebird');
+const _ = require('lodash');
 const moment = require('moment');
 const nunjucks = require('nunjucks');
 const compression = require('compression');
 const express = require('express');
 const app = express();
-const redis = require('redis');
-Promise.promisifyAll(redis.RedisClient.prototype);
-const redisClient = redis.createClient();
+const mqtt = require('mqtt');
 const WebSocket = require('ws');
+
+const weather = {
+	state: null,
+	temperature: null,
+	feelslike: null,
+	wind: null,
+	humidity: null,
+	pressure: null,
+	quality: null,
+	warning: null,
+	forecastToday: null,
+	forecastTomorrow: null,
+	sunrise: null,
+	sunset: null,
+	updated: null,
+};
 
 nunjucks.configure('views', {
 	autoescape: true,
@@ -18,35 +32,14 @@ nunjucks.configure('views', {
 app.use(compression());
 app.use(express.static('public'));
 
-const getData = () => {
-	return Promise.props({
-		state: redisClient.getAsync('pocasi/stav'),
-		temperature: redisClient.getAsync('pocasi/teplota'),
-		feelslike: redisClient.getAsync('pocasi/teplota-pocitova'),
-		wind: redisClient.getAsync('pocasi/vitr'),
-		humidity: redisClient.getAsync('pocasi/vlhkost'),
-		pressure: redisClient.getAsync('pocasi/tlak'),
-		quality: redisClient.getAsync('pocasi/ovzdusi'),
-		warning: redisClient.getAsync('pocasi/vystraha'),
-		forecastToday: redisClient.getAsync('pocasi/predpoved-dnes'),
-		forecastTomorrow: redisClient.getAsync('pocasi/predpoved-zitra'),
-		sunrise: redisClient.getAsync('pocasi/slunce-vychod'),
-		sunset: redisClient.getAsync('pocasi/slunce-zapad'),
-		updated: redisClient.getAsync('pocasi/aktualizovano'),
-	});
-};
-
 app.get('/nojs', (req, res) => {
-	getData().then((weather) => {
-		weather.updated = moment(weather.updated).format('D.M.YYYY H:mm:ss');
-		res.render('index.html', { weather: weather });
-	});
+	const myWeather = _.clone(weather);
+	myWeather.updated = moment(myWeather.updated).format('D.M.YYYY H:mm:ss');
+	res.render('index.html', { weather: myWeather });
 });
 
 app.get('/api', (req, res) => {
-	getData().then((weather) => {
-		res.json(weather);
-	});
+	res.json(weather);
 });
 
 const server = app.listen(8008, () => {
@@ -64,12 +57,45 @@ ws.broadcast = (data) => {
 	});
 };
 ws.on('connection', (client) => {
-	getData().then((weather) => {
-		client.send(JSON.stringify(weather));
-	});
+	client.send(JSON.stringify(weather));
 });
-setInterval(() => {
-	getData().then((weather) => {
-		ws.broadcast(JSON.stringify(weather));
-	});
-}, 60000);
+
+const mqttClient = mqtt.connect();
+
+mqttClient.on('connect', () => {
+	mqttClient.subscribe('pocasi/#');
+});
+
+mqttClient.on('message', function (topic, message) {
+	const value = message.toString();
+	if (topic === 'pocasi/stav') {
+		weather.state = value;
+	} else if (topic === 'pocasi/teplota') {
+		weather.temperature = value;
+	} else if (topic === 'pocasi/teplota-pocitova') {
+		weather.feelslike = value;
+	} else if (topic === 'pocasi/vitr') {
+		weather.wind = value;
+	} else if (topic === 'pocasi/vlhkost') {
+		weather.humidity = value;
+	} else if (topic === 'pocasi/tlak') {
+		weather.pressure = value;
+	} else if (topic === 'pocasi/ovzdusi') {
+		weather.quality = value;
+	} else if (topic === 'pocasi/vystraha') {
+		weather.warning = value;
+	} else if (topic === 'pocasi/predpoved-dnes') {
+		weather.forecastToday = value;
+	} else if (topic === 'pocasi/predpoved-zitra') {
+		weather.forecastTomorrow = value;
+	} else if (topic === 'pocasi/slunce-vychod') {
+		weather.sunrise = value;
+	} else if (topic === 'pocasi/slunce-zapad') {
+		weather.sunset = value;
+	} else if (topic === 'pocasi/aktualizovano') {
+		weather.updated = value;
+		setTimeout(() => {
+			ws.broadcast(JSON.stringify(weather));
+		}, 10000);
+	}
+});

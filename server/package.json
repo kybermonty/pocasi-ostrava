@@ -2,12 +2,12 @@
   "name": "pocasi-ostrava",
   "version": "1.0.0",
   "dependencies": {
-    "bluebird": "^3.5.1",
     "compression": "^1.7.2",
     "express": "^4.16.2",
+    "lodash": "^4.17.11",
     "moment": "^2.22.2",
+    "mqtt": "^2.18.8",
     "nunjucks": "^3.1.2",
-    "redis": "^2.8.0",
     "ws": "^5.2.1"
   },
   "devDependencies": {
